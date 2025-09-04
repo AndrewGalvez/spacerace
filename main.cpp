@@ -18,7 +18,8 @@ public:
     }
     // down
     else if (IsKeyDown(keybinds[1])) {
-      rect.y += speed * dt;
+      if (rect.y + rect.height < 200)
+        rect.y += speed * dt;
     }
   }
 
