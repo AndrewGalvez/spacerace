@@ -10,7 +10,8 @@ class Player {
   float speed = 50;
 
 public:
-  void draw() { DrawRectangleRec(rect, RED); }
+  bool dead = false;
+  void draw() { DrawRectangleRec(rect, BLUE); }
 
   void update(float dt) {
     // up
@@ -75,6 +76,8 @@ int main() {
 
   std::vector<Asteroid> asteroids;
 
+  int freezeFrames = 0;
+
   InitWindow(800, 600, "Space Race");
 
   SetTargetFPS(60);
@@ -95,10 +98,11 @@ int main() {
 
   Sound death = LoadSound("death.wav");
   Sound explosion = LoadSound("explosion.wav");
+  Sound explosion2 = LoadSound("explosion2.wav");
 
   while (!WindowShouldClose()) {
     BeginTextureMode(target);
-    ClearBackground(BLACK);
+    ClearBackground(freezeFrames == 0 ? BLACK : RED);
     player1.draw();
     player2.draw();
 
@@ -122,6 +126,21 @@ int main() {
     ClearBackground(WHITE);
     DrawRenderTexture(target, 150, 200);
     EndDrawing();
+
+    if (freezeFrames > 0) {
+      freezeFrames--;
+      if (freezeFrames == 0) {
+        if (player1.dead) {
+          player1.getRect().y = 170;
+          PlaySound(explosion2);
+        }
+        if (player2.dead) {
+          player2.getRect().y = 170;
+          PlaySound(explosion2);
+        }
+      }
+      continue;
+    }
 
     float dt = GetFrameTime();
     frame++;
@@ -152,16 +171,16 @@ int main() {
       a.update(dt);
 
       if (CheckCollisionRecs(a.rect, player1.getRect())) {
-        player1.getRect().y = 170;
+        freezeFrames = 30;
+        player1.dead = true;
         PlaySound(death);
-        if (asteroidSpawnInterval == asteroidSpawnIntervalMin)
-          asteroidSpawnInterval = asteroidSpawnIntervalBase;
+        continue;
       }
       if (CheckCollisionRecs(a.rect, player2.getRect())) {
-        player2.getRect().y = 170;
+        freezeFrames = 30;
         PlaySound(death);
-        if (asteroidSpawnInterval == asteroidSpawnIntervalMin)
-          asteroidSpawnInterval = asteroidSpawnIntervalBase;
+        player2.dead = true;
+        continue;
       }
     }
 
