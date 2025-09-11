@@ -7,13 +7,26 @@ class Player {
   Rectangle rect = {0, 0, 8, 24};
   KeyboardKey keybinds[2] = {KEY_W, KEY_S};
 
+public:
+  bool hasPowerUp = false;
+  int powerUpTimer = 0;
+
   float speed = 50;
 
 public:
   bool dead = false;
-  void draw() { DrawRectangleRec(rect, BLUE); }
+  void draw() {
+    DrawRectangleRec(rect, BLUE);
+    float powerUpHeight = (rect.height * powerUpTimer) / 1200.0f;
+    DrawRectangle(rect.x, rect.y, rect.width, powerUpHeight, GOLD);
+  }
 
   void update(float dt) {
+    if (powerUpTimer > 0) {
+      powerUpTimer--;
+      if (powerUpTimer == 0)
+        hasPowerUp = false;
+    }
     // up
     if (IsKeyDown(keybinds[0])) {
       rect.y -= speed * dt;
@@ -57,13 +70,18 @@ public:
   Color clr = WHITE;
   int dir = 1;
   float speed = 25;
+  bool isPowerUp = false;
 
   void draw() { DrawRectangleRec(rect, clr); }
 
   void update(float dt) { rect.x += dir * (speed * dt); }
 
-  Asteroid(Rectangle rect, int dir, float speed)
-      : rect(rect), dir(dir), speed(speed) {}
+  Asteroid(Rectangle rect, int dir, float speed, bool powerup)
+      : rect(rect), dir(dir), speed(speed) {
+    isPowerUp = powerup;
+    if (powerup)
+      clr = GOLD;
+  }
 };
 
 int main() {
@@ -164,19 +182,31 @@ int main() {
       asteroids.push_back(
           Asteroid({static_cast<float>(x), static_cast<float>(y),
                     static_cast<float>(w), static_cast<float>(h)},
-                   dir, speed));
+                   dir, speed, GetRandomValue(0, 10) == 2));
     }
 
     for (Asteroid &a : asteroids) {
       a.update(dt);
 
-      if (CheckCollisionRecs(a.rect, player1.getRect())) {
+      if (CheckCollisionRecs(a.rect, player1.getRect()) &&
+          !player1.hasPowerUp) {
+        if (a.isPowerUp) {
+          player1.powerUpTimer = 1200;
+          player1.hasPowerUp = true;
+          continue;
+        }
         freezeFrames = 30;
         player1.dead = true;
         PlaySound(death);
         continue;
       }
-      if (CheckCollisionRecs(a.rect, player2.getRect())) {
+      if (CheckCollisionRecs(a.rect, player2.getRect()) &&
+          !player2.hasPowerUp) {
+        if (a.isPowerUp) {
+          player2.powerUpTimer = 1200;
+          player2.hasPowerUp = true;
+          continue;
+        }
         freezeFrames = 30;
         PlaySound(death);
         player2.dead = true;
